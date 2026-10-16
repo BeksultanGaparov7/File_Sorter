@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# File Sorter config — installed to ~/.config/file-sorter/config.toml
+# After editing: systemctl --user restart file-sorter
+
+watch_dir = "~/Downloads"
+
+# Seconds a file's size must stay unchanged before it is moved.
+settle_seconds = 1.0
+
+# In-progress download extensions that are never touched.
+ignore_extensions = ["part", "crdownload", "download", "tmp", "partial", "!ut", "aria2"]
+
+# Destination folder -> extensions. Relative folders are created inside watch_dir;
+# "~/Videos"-style paths also work. Unlisted extensions trigger an
+# "Unknown file format" notification and the file stays put.
+[categories]
+D_Videos    = ["mp4", "mkv", "webm", "avi", "mov", "m4v", "flv", "wmv", "mpg", "mpeg"]
+D_Pictures  = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "heic", "tiff", "avif"]
+D_Audio     = ["mp3", "flac", "wav", "ogg", "m4a", "aac", "opus"]
+D_Documents = ["pdf", "doc", "docx", "odt", "txt", "md", "rtf", "xls", "xlsx", "ods", "csv", "ppt", "pptx", "odp", "epub"]
+D_Archives  = ["zip", "tar", "gz", "tgz", "xz", "bz2", "zst", "7z", "rar", "tar.gz", "tar.xz", "tar.bz2", "tar.zst"]
+D_Programs  = ["appimage", "deb", "rpm", "run", "exe", "msi", "flatpakref"]
+
+# Reminders about files left in Downloads (top level and inside the D_* folders).
+[stale]
+enabled = true
+after_days = 7              # a file is "rotting" after this many days
+remind_every_hours = 24     # don't nag about the same file more often than this
+check_every_minutes = 60
+max_individual = 3          # more stale files than this -> one summary notification
+
+# Where the "Move to …" button sends files from each folder.
+# `other` = files that were never sorted (unknown formats, folders).
+# A folder without an entry only gets "Move to Trash" / "Keep".
+[move_out]
+D_Videos    = "~/Videos"
+D_Pictures  = "~/Pictures"
+D_Audio     = "~/Music"
+D_Documents = "~/Documents"
+other       = "~/Documents"
