@@ -1,0 +1,28 @@
+[package]
+name = "file-sorter"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.89"
+description = "Sorts new downloads into folders, notifies you, and reminds you about files left in Downloads"
+authors = ["Merlin Hermes"]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/BeksultanGaparov7/File_Sorter"
+homepage = "https://github.com/BeksultanGaparov7/File_Sorter"
+readme = "README.md"
+keywords = ["downloads", "organizer", "inotify", "notifications", "linux"]
+categories = ["command-line-utilities", "filesystem"]
+exclude = ["/.github"]
+
+[dependencies]
+clap = { version = "4.6.7", features = ["derive", "wrap_help"] }
+dirs = "7.0.0"
+inotify = "0.11.5"
+notify-rust = "4.18.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+toml = "1.1.8"
+trash = "5.2.9"
+
+[profile.release]
+strip = true
+lto = true

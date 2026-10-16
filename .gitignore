@@ -1,0 +1,15 @@
+# Build output
+/target/
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Local leftovers
+*.bak
+*.orig
+*.rej
+/config.local.toml
