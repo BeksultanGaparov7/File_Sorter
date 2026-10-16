@@ -1,0 +1,44 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Download a file named `example.mp4`
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of `journalctl --user -u file-sorter -n 50 --no-pager` (remove anything private, e.g. file names).
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: file-sorter version
+      description: Output of `file-sorter -V`
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Distro, desktop and notification daemon
+      placeholder: e.g. Arch / Hyprland / mako
+  - type: textarea
+    id: config
+    attributes:
+      label: Config changes
+      description: Anything you changed in `~/.config/file-sorter/config.toml`.
+      render: toml
