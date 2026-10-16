@@ -83,3 +83,55 @@ pub fn move_path(src: &Path, dst: &Path) -> io::Result<()> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+
+    fn tempdir(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("file-sorter-test-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn unique_path_numbers_before_extension() {
+        let dir = tempdir("unique");
+        for name in ["a.mp4", "a (1).mp4", "b.tar.gz", "README"] {
+            fs::write(dir.join(name), "x").unwrap();
+        }
+        assert_eq!(unique_path(&dir.join("a.mp4")), dir.join("a (2).mp4"));
+        assert_eq!(unique_path(&dir.join("b.tar.gz")), dir.join("b (1).tar.gz"));
+        assert_eq!(unique_path(&dir.join("README")), dir.join("README (1)"));
+        assert_eq!(unique_path(&dir.join("new.txt")), dir.join("new.txt"));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn sort_file_moves_known_and_leaves_unknown() {
+        let dir = tempdir("sort");
+        let rules = Config::default().rules(&dir);
+        fs::write(dir.join("movie.mp4"), "x").unwrap();
+        fs::write(dir.join("weird.xyz"), "x").unwrap();
+        fs::write(dir.join(".hidden.mp4"), "x").unwrap();
+
+        assert!(matches!(sort_file(&rules, &dir.join("movie.mp4"), false), Outcome::Moved { .. }));
+        assert!(dir.join("D_Videos/movie.mp4").is_file());
+        assert!(matches!(sort_file(&rules, &dir.join("weird.xyz"), false), Outcome::Unknown { .. }));
+        assert!(dir.join("weird.xyz").is_file());
+        assert!(matches!(sort_file(&rules, &dir.join(".hidden.mp4"), false), Outcome::Skipped));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn dry_run_moves_nothing() {
+        let dir = tempdir("dry");
+        let rules = Config::default().rules(&dir);
+        fs::write(dir.join("song.mp3"), "x").unwrap();
+        assert!(matches!(sort_file(&rules, &dir.join("song.mp3"), true), Outcome::Moved { .. }));
+        assert!(dir.join("song.mp3").is_file());
+        assert!(!dir.join("D_Audio").exists());
+        fs::remove_dir_all(dir).unwrap();
+    }
+}

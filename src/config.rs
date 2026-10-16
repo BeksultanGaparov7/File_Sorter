@@ -202,3 +202,68 @@ pub fn tilde(p: &Path) -> String {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rules() -> Rules {
+        Config::default().rules(Path::new("/dl"))
+    }
+
+    fn dest(name: &str) -> Option<PathBuf> {
+        match rules().classify(name) {
+            Class::Known { dest } => Some(dest),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn known_extensions_go_to_their_folder() {
+        assert_eq!(dest("movie.mp4"), Some(PathBuf::from("/dl/D_Videos")));
+        assert_eq!(dest("Photo.JPG"), Some(PathBuf::from("/dl/D_Pictures")));
+        assert_eq!(dest("my.song.mp3"), Some(PathBuf::from("/dl/D_Audio")));
+        assert_eq!(dest("backup.tar.gz"), Some(PathBuf::from("/dl/D_Archives")));
+    }
+
+    #[test]
+    fn partial_downloads_are_ignored() {
+        assert!(rules().is_ignored("movie.mp4.part"));
+        assert!(rules().is_ignored("movie.mp4.crdownload"));
+    }
+
+    #[test]
+    fn unknown_and_missing_extensions() {
+        assert!(matches!(rules().classify("weird.xyz"), Class::Unknown { ext: Some(e) } if e == "xyz"));
+        assert!(matches!(rules().classify("README"), Class::Unknown { ext: None }));
+        assert!(matches!(rules().classify("trailing."), Class::Unknown { ext: None }));
+    }
+
+    #[test]
+    fn absolute_destinations_are_kept() {
+        let mut cfg = Config::default();
+        cfg.categories.insert("/srv/media".into(), vec!["iso".into()]);
+        assert!(
+            matches!(cfg.rules(Path::new("/dl")).classify("os.iso"), Class::Known { dest } if dest == Path::new("/srv/media"))
+        );
+    }
+
+    #[test]
+    fn partial_config_keeps_defaults() {
+        let cfg: Config = toml::from_str("watch_dir = \"/tmp/x\"\n[stale]\nafter_days = 3\n").unwrap();
+        assert_eq!(cfg.stale.after_days, 3.0);
+        assert_eq!(cfg.stale.max_individual, 3);
+        assert!(cfg.categories.contains_key("D_Videos"));
+    }
+
+    #[test]
+    fn shipped_config_parses() {
+        let cfg: Config = toml::from_str(include_str!("../config.toml")).unwrap();
+        assert_eq!(cfg.categories.len(), Config::default().categories.len());
+    }
+
+    #[test]
+    fn tilde_expansion() {
+        assert_eq!(expand("~/Videos"), home().join("Videos"));
+        assert_eq!(expand("/abs"), PathBuf::from("/abs"));
+    }
+}
