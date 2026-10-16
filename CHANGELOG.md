@@ -6,7 +6,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-10-16
+## [0.1.0] - 2026-10-16
 
 ### Added
 - Background service (`file-sorter --watch`, systemd user unit) that sorts finished downloads
@@ -19,5 +19,5 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - TOML config at `~/.config/file-sorter/config.toml`.
 - `install.sh` / `uninstall.sh`. The installer puts the binary on your PATH.
 
-[Unreleased]: https://github.com/BeksultanGaparov7/File_Sorter/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/BeksultanGaparov7/File_Sorter/releases/tag/v1.0.0
+[Unreleased]: https://github.com/BeksultanGaparov7/File_Sorter/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/BeksultanGaparov7/File_Sorter/releases/tag/v0.1.0
