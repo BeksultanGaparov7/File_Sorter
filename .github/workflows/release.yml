@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --locked
+      - name: Package
+        run: |
+          name=file-sorter-${GITHUB_REF_NAME}-x86_64-linux
+          mkdir "$name"
+          cp target/release/file-sorter install.sh uninstall.sh config.toml file-sorter.service README.md LICENSE "$name/"
+          tar czf "$name.tar.gz" "$name"
+          sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" file-sorter-*.tar.gz* \
+            --title "$GITHUB_REF_NAME" --notes "See the [changelog](https://github.com/BeksultanGaparov7/File_Sorter/blob/main/CHANGELOG.md) for details."
