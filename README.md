@@ -1,7 +1,10 @@
 # File Sorter
 
 [![CI](https://github.com/BeksultanGaparov7/File_Sorter/actions/workflows/ci.yml/badge.svg)](https://github.com/BeksultanGaparov7/File_Sorter/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/BeksultanGaparov7/File_Sorter?sort=semver)](https://github.com/BeksultanGaparov7/File_Sorter/releases)
 [![License: GPL v3+](https://img.shields.io/badge/License-GPLv3%2B-blue.svg)](LICENSE)
+
+![File Sorter — sorts new downloads into folders](assets/banner.svg)
 
 **Keeps your `~/Downloads` folder from turning into a junk drawer.**
 

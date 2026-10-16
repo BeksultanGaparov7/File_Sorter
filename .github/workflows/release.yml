@@ -7,23 +7,114 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  release:
+  checks:
+    name: fmt, clippy, test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release --locked
-      - name: Package
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  release:
+    name: build and publish
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check version matches tag
         run: |
-          name=file-sorter-${GITHUB_REF_NAME}-x86_64-linux
-          mkdir "$name"
-          cp target/release/file-sorter install.sh uninstall.sh config.toml file-sorter.service README.md LICENSE "$name/"
-          tar czf "$name.tar.gz" "$name"
-          sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+          version="$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])')"
+          if [[ "v$version" != "$GITHUB_REF_NAME" ]]; then
+            echo "Cargo.toml version ($version) does not match tag ($GITHUB_REF_NAME)" >&2
+            exit 1
+          fi
+
+      - run: cargo build --release --locked
+
+      - name: Package
+        id: package
+        run: |
+          base="file-sorter-${GITHUB_REF_NAME}-x86_64-linux"
+          mkdir "$base"
+          cp target/release/file-sorter install.sh uninstall.sh config.toml \
+             file-sorter.service README.md CHANGELOG.md LICENSE "$base/"
+          tar czf "$base.tar.gz" "$base"
+          sha256sum "$base.tar.gz" > "$base.tar.gz.sha256"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Write release notes
+        run: |
+          base="${{ steps.package.outputs.base }}"
+          banner="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/assets/banner.svg"
+          checksum="$(cat "$base.tar.gz.sha256")"
+
+          if prev="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null)"; then
+            changelog_link="**Full changelog:** [\`${prev}...${GITHUB_REF_NAME}\`](https://github.com/${GITHUB_REPOSITORY}/compare/${prev}...${GITHUB_REF_NAME})"
+          else
+            changelog_link="**Full changelog:** [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/CHANGELOG.md)"
+          fi
+
+          {
+            cat <<EOF
+          ![File Sorter](${banner})
+
+          _Keeps your ~/Downloads folder from turning into a junk drawer._
+
+          ## What's new in ${GITHUB_REF_NAME}
+
+          EOF
+            bash .github/scripts/changelog-section.sh "${GITHUB_REF_NAME}"
+            cat <<EOF
+
+          ## Install
+
+          Download the tarball from the assets below, then install it:
+
+          \`\`\`sh
+          tar xzf ${base}.tar.gz
+          cd ${base}
+          ./install.sh
+          \`\`\`
+
+          Requires Linux with systemd (user services) and a desktop notification daemon.
+          The build is for **x86_64**. To build from source instead, see the
+          [README](https://github.com/${GITHUB_REPOSITORY}#installation).
+
+          ## Verify the download
+
+          SHA-256 of \`${base}.tar.gz\`:
+
+          \`\`\`text
+          ${checksum}
+          \`\`\`
+
+          ---
+
+          ${changelog_link}
+          Licensed under the [GNU GPL v3 or later](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/LICENSE).
+          EOF
+          } > notes.md
+
+          cat notes.md
+
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" file-sorter-*.tar.gz* \
-            --title "$GITHUB_REF_NAME" --notes "See the [changelog](https://github.com/BeksultanGaparov7/File_Sorter/blob/main/CHANGELOG.md) for details."
+            --title "File Sorter $GITHUB_REF_NAME" \
+            --notes-file notes.md
